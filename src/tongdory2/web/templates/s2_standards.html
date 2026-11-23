@@ -1,0 +1,37 @@
+{% extends "base.html" %}
+{% from "_liner_key_cta.html" import key_cta %}
+{% block title %}공개 규격 찾기{% endblock %}
+{% block content %}
+<section class="card">
+  <h2>공개 규격 찾기</h2>
+  <p class="hint">공개 규격 번호로 출처를 찾습니다. 파일명과 문서 내용은 전송하지 않습니다.</p>
+  {% if error %}<p class="notice warn" role="alert">{{ error }}</p>{% endif %}
+  <form method="get" action="/s2/standards" class="row">
+    {% if return_to %}<input type="hidden" name="return_to" value="{{ return_to }}">{% endif %}
+    <label for="standard-identifier">공개 규격 번호 <input type="text" id="standard-identifier" autocorrect="off" autocapitalize="none" spellcheck="false" name="identifier" value="{{ identifier }}" placeholder="RFC 8446" required></label>
+    <button type="submit">검색어 미리보기</button>
+  </form>
+  {% if query and results is none %}
+  <p>Liner에 보낼 검색어</p>
+  <pre style="white-space:pre-wrap">{{ query }}</pre>
+  {% if has_key %}
+  <form method="post" action="/s2/standards" class="row">
+    {% if return_to %}<input type="hidden" name="return_to" value="{{ return_to }}">{% endif %}
+    <input type="hidden" name="identifier" value="{{ identifier }}">
+    <input type="hidden" name="approval" value="{{ approval }}">
+    <button class="primary" type="submit">검색어를 전송하고 검색</button>
+  </form>
+  {% else %}<p class="hint">검색하려면 Liner API 키가 필요합니다. {{ key_cta(request.url.path ~ ('?' ~ request.url.query if request.url.query else ''), 'API 키 등록하고 검색하기') }}</p>{% endif %}
+  {% endif %}
+  {% if results is not none %}
+  <h3>검색 결과</h3>
+  <p class="hint">링크를 열어 공식 발행처와 문서 버전을 확인해 주세요.</p>
+  <ul>
+    {% for item in results %}
+    <li><a href="{{ item.url }}" target="_blank" rel="noopener noreferrer">{{ item.title or item.url }}</a></li>
+    {% else %}<li>검색 결과가 없습니다.</li>{% endfor %}
+  </ul>
+  {% endif %}
+  <a class="link" href="{{ back_url }}">{{ '상황판으로 돌아가기' if back_url == '/' else '검토 화면으로 돌아가기' }}</a>
+</section>
+{% endblock %}

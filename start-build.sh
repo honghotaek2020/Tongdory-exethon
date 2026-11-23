@@ -33,5 +33,5 @@ if [ -z "$py" ]; then
 fi
 
 echo "[빌드] Python $py 사용. 수 분 걸립니다."
-exec "$UV" run --isolated --locked --no-dev --with nuitka==4.3.5 --no-managed-python --python "$py" \
+exec "$UV" run --isolated --locked --no-dev --with nuitka==4.3.5 --with zstandard --no-managed-python --python "$py" \
   python scripts/build_standalone.py "$@"

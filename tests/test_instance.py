@@ -51,3 +51,25 @@ def test_record_is_owned_and_unknown_holder_is_left_alone(tmp_path):
         assert instance.stop_previous(data, "127.0.0.1", port, wait=0.1) == "unknown"
         instance.write_record(data, port + 1, "mine")
         assert instance.stop_previous(data, "127.0.0.1", port, wait=0.1) == "unknown"
+
+
+def test_db_close_all_closes_connections_from_other_threads(tmp_path):
+    """Windows에서 임시 DB 폴더를 지우려면 요청 스레드들이 연 연결까지 모두 닫아야 한다."""
+    import sqlite3
+    import threading
+
+    import pytest
+
+    from tongdory2.db import DB
+
+    db = DB(tmp_path / "t.db")
+    seen = []
+    worker = threading.Thread(target=lambda: seen.append(db.conn))
+    worker.start()
+    worker.join()
+    main_conn = db.conn
+    db.close_all()
+    for conn in (seen[0], main_conn):
+        with pytest.raises(sqlite3.ProgrammingError):
+            conn.execute("SELECT 1")
+    assert db.conn.execute("SELECT 1").fetchone()[0] == 1  # 닫은 뒤에도 새 연결로 다시 쓸 수 있다

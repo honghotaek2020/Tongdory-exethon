@@ -30,7 +30,7 @@ def _windowed() -> bool:
 
 def _alert(message: str) -> None:
     """창 없이 실행했을 때 사용자에게 오류를 알린다 (터미널이 없으므로 로그만으로는 보이지 않는다)."""
-    if not WINDOWED:
+    if not WINDOWED or CHECK_MODE:  # 점검 모드에서는 창을 띄우지 않는다 (빌드가 확인 클릭을 기다리며 멈춤)
         return
     try:
         if os.name == "nt":
@@ -61,6 +61,7 @@ def _log_to_file(data_dir: Path) -> Path | None:
 
 
 WINDOWED = _windowed()
+CHECK_MODE = "--check-installation" in sys.argv
 DETACHED_ENV = "TONGDORY_DETACHED"
 
 

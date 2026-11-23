@@ -28,7 +28,8 @@ def _require(condition: bool, message: str) -> None:
 def check_installation() -> None:
     # Windows의 기본 임시 폴더는 보호 대상인 AppData 아래에 있다.
     work_parent = Path.home() if os.name == "nt" else None
-    with TemporaryDirectory(prefix="tongdory-check-", dir=work_parent) as tmp:
+    # 정리 실패(예: 백신이 파일을 잡고 있음)로 점검 자체를 실패시키지 않는다.
+    with TemporaryDirectory(prefix="tongdory-check-", dir=work_parent, ignore_cleanup_errors=True) as tmp:
         home = Path(tmp).resolve() / "home"
         source = home / "Downloads" / "하위폴더" / "회의록.txt"
         destination = home / "Documents" / "정리"
@@ -74,5 +75,5 @@ def check_installation() -> None:
             _require(not recovery.stopped and not target.exists() and source.read_bytes() == original,
                      "임시 파일 되돌리기 실패")
         finally:
-            state.db.conn.close()
+            state.db.close_all()  # 요청을 처리한 모든 스레드의 연결을 닫아야 Windows에서 임시 폴더를 지울 수 있다
     logging.getLogger(__name__).info("[배포 점검] 웹 화면·폴더 등록·하위 파일 조사·이동·되돌리기 통과")

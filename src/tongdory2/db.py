@@ -45,18 +45,34 @@ class DB:
         path.parent.mkdir(parents=True, exist_ok=True)
         self.path = path
         self._local = threading.local()
+        self._opened: list[sqlite3.Connection] = []  # close_all()에서 다른 스레드의 연결도 닫기 위해 기록
+        self._opened_lock = threading.Lock()
         self.conn.executescript(SCHEMA)
 
     @property
     def conn(self) -> sqlite3.Connection:
         c = getattr(self._local, "conn", None)
         if c is None:
-            c = sqlite3.connect(str(self.path), timeout=10)
+            # 각 연결은 만든 스레드만 쓴다. check_same_thread=False는 종료 시 close_all()에서 닫기 위한 것.
+            c = sqlite3.connect(str(self.path), timeout=10, check_same_thread=False)
             c.row_factory = sqlite3.Row
             c.execute("PRAGMA busy_timeout=10000")
             c.execute("PRAGMA foreign_keys=ON")
             self._local.conn = c
+            with self._opened_lock:
+                self._opened.append(c)
         return c
+
+    def close_all(self) -> None:
+        """이 DB로 연 모든 스레드의 연결을 닫는다 (Windows는 열린 DB 파일을 지울 수 없다)."""
+        with self._opened_lock:
+            opened, self._opened = self._opened, []
+        for c in opened:
+            try:
+                c.close()
+            except sqlite3.Error:
+                pass
+        self._local = threading.local()
 
     # ---------------- roots ----------------
     def list_roots(self) -> list[RegisteredRoot]:

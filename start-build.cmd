@@ -17,7 +17,7 @@ call :find_python
 if not defined PY (echo Python 설치를 확인하지 못했습니다. 창을 닫고 다시 실행하세요. & pause & exit /b 1)
 :build
 echo [빌드] Python %PY% 사용. 오래 걸릴 수 있습니다(첫 빌드는 1시간 이상).
-"%UV%" run --isolated --locked --no-dev --with nuitka==4.3.5 --no-managed-python --python %PY% python scripts/build_standalone.py %*
+"%UV%" run --isolated --locked --no-dev --with nuitka==4.3.5 --with zstandard --no-managed-python --python %PY% python scripts/build_standalone.py %*
 if errorlevel 1 (echo [빌드 실패] 위 오류를 확인하세요.) else (echo [빌드 완료] src\dist 폴더의 ZIP을 확인하세요.)
 pause
 exit /b
